@@ -17,18 +17,22 @@ We will start making the TitleMenu (aka Main Menu). Here is the concept art for 
 We're going to do this by making a file called "ScreenTitleMenu overlay.lua" in BGAnimations. When Etterna/Stepmania loads a new screen, it loads a bunch of lua files for that screen from the themes BGAnimations. The difference between the files is usually the draw order (Overlay being the uppermost, decorations the middle one and underlay the background).
 
 The first important piece of code we're gonna be using is gonna allow us to manually change screens. This is done with the following code:
-```SCREENMAN:GetTopScreen():SetNextScreenName("ScreenName"):StartTransitioningScreen("SM_GoToNextScreen") ```
+```
+SCREENMAN:GetTopScreen():SetNextScreenName("ScreenName"):StartTransitioningScreen("SM_GoToNextScreen") 
+```
 We can make it into a function so our code will be more readable:
 ```
 function ChangeScreen(screen)
 	SCREENMAN:GetTopScreen():SetNextScreenName(screen):StartTransitioningScreen("SM_GoToNextScreen") 
-end```
+end
+```
 This function is probably gonna be used in many different files. Therefore, we dont want to define it more than once. We want to make it's scope (Where we can use it, the "area" or places where the lua interpreter knows/recognizes the identifier/name (ChangeScreen in this case) of our function) our whole theme. To do this we will make a /Scripts/ file. The files in this folder (Scripts) are all loaded when the game starts, and everything in them is global and accesible/usable from anywhere in the theme (With the exception of other /Scripts/ files. The game loads these files in alphabetical order, so we cant use something defined in a file that comes after the one we're coding in alphabetical order). Please note that any lua errors encountered in Scripts will be in the logs file (Etterna/Logs/log.txt) and they will not appear in the ingame debug console.
 We will call it "09 ScreenUtility.lua". Note the "09" prefix. Prepending (Adding to the beginning) a number is the usual convention to force a specific load order for /Scripts/ files. Since this file wont depend on other scripts, we can use a high number prefix (Meaning it will be loaded last or close to last).
 
 So, going back to BGAnimations, the code in "ScreenTitleMenu overlay.lua" is going to be run when we reach the TitleMenu. So we can think of doing this:
 ```
-ChangeScreen("ScreenSelectProfile")```
+ChangeScreen("ScreenSelectProfile")
+```
 But the reality is that, even if the code is ran when TitleMenu starts, usually the most we can do directly in the file is just change the values of global variables. In this case our little function will do "SCREENMAN:GetTopScreen" and encounter some kind of error. But dont despair! The way theming works each BGA (BGAnimations) file returns an Actor, which will later be loaded in the screen. But, what is an Actor you ask? If you're familiar with Object Oriented Programming (OOP) you can think of an Actor as an object (It's actually a lua table with some special things). What matters is that there are different kinds of Actors (We will learn about them bit by bit with examples), and each has its own functionality.
 The basic Actor is the container Actor, called ActorFrame. Almosts all it does is "own" other Actors. Usually all BGA files return an ActorFrame. Here is how we define an actor frame and return it (This would be "ScreenTitleMenu overlay.lua")
 ```local t = Def.ActorFrame{}
@@ -105,7 +109,8 @@ local items = {
 	{name="Exit", 
 		onClick=ChangeScreenFunction("ScreenExit"),
 	},
-}```
+}
+```
 Each "item" has a name (The button text), an onClick function that does stuff and a condition function that returns a boolean. This is just a first iteration of what these items will be. Next we're gonna add MessageCommands for clicks. Since most screens in this theme will include this main menu file, adding the click commands here will make them available in most screens.
 ```
 local function input(event)
@@ -122,4 +127,5 @@ local t = Def.ActorFrame {
 	OnCommand=function(self) 
 		SCREENMAN:GetTopScreen():AddInputCallback(input)
 	end,
-}```
+}
+```
