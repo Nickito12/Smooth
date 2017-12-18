@@ -11,6 +11,7 @@ local default = {
 	width= themeConfig:get_data().positions.sideBarWidth,
 	itemWidth = themeConfig:get_data().positions.sideBarWidth,
 	x=0,
+	startingItem=1,
 	y=themeConfig:get_data().positions.mainMenuHeight,
 	height = SCREEN_HEIGHT-themeConfig:get_data().positions.mainMenuHeight,
 	itemHeight = itemH,
@@ -27,23 +28,25 @@ local default = {
 	}
 }
 function SelectSideBarItem(params, i)
-	currentSideBarItemTable[params.sidebarnum] = i
+	SideBarItemTable[params.sidebarnum] = i
 	MESSAGEMAN:Broadcast("UpdateSideBar")
 end
 local sidebarqty=1
-currentSideBarItemTable= {}
+SideBarItemTable= {}
 function NewSideBar(params)
-	-- fill empty optiins as default
+	-- fill empty options as default
 	params.sidebarnum = sidebarqty
-	currentSideBarItemTable[params.sidebarnum] = 1
-	sidebarqty = sidebarqty+1
 	fillNilTableFieldsFrom(params, default)
+	SideBarItemTable[params.sidebarnum] = params.startingItem
+	sidebarqty = sidebarqty+1
+	local ret = Def.ActorFrame{ }
 	local t = Def.ActorFrame{
 		--pos
 		moving = false,
 		InitCommand=function(self)
 			self.moving = false
 			self:xy(params.x,params.y)
+			SelectSideBarItem(params, params.startingItem)
 		end,
 		EndTweenCommand=function(self)
 			self.moving=false
@@ -60,38 +63,22 @@ function NewSideBar(params)
 				self:linear(0.2):x(params.x):queuecommand("EndTween")
 			end
 		end,
-		--bg
-		Def.Quad {
-			InitCommand=function(self)
-				self:xy(params.width/2,params.height/2):zoomto(params.width,params.height)
-				self:diffuse(params.bgColor)
-			end;
-		},
-		--4 border quads
-		Def.Quad {
-			InitCommand=function(self)
-				self:xy(params.borderWidth/2,params.height/2):zoomto(params.borderWidth,params.height)
-				self:diffuse(params.borderColor)
-			end;
-		},
-		Def.Quad {
-			InitCommand=function(self)
-				self:xy(params.width/2,params.borderWidth/2):zoomto(params.width,params.borderWidth)
-				self:diffuse(params.borderColor)
-			end;
-		},
-		Def.Quad {
-			InitCommand=function(self)
-				self:xy(params.borderWidth/2+params.width,params.height/2):zoomto(params.borderWidth,params.height)
-				self:diffuse(params.borderColor)
-			end;
-		},
-		Def.Quad {
-			InitCommand=function(self)
-				self:xy(params.width/2,params.height+params.borderWidth/2):zoomto(params.width,params.borderWidth)
-				self:diffuse(params.borderColor)
-			end;
-		},
+	}
+	--Add all contents
+	for i=1,#params.items do
+		local content = params.items[i].content or Def.ActorFrame {}
+		content.UpdateSideBarMessageCommand = function(self)
+			self:visible(i==SideBarItemTable[params.sidebarnum])
+		end
+		ret[#ret+1] = content
+	end
+	ret[#ret+1] = t
+	--bg
+	t[#t+1] = Def.Quad {
+		InitCommand=function(self)
+			self:xy(params.width/2,params.height/2):zoomto(params.width,params.height)
+			self:diffuse(params.bgColor)
+		end;
 	}
 	for i=1,#params.items do
 		t[#t+1] = Def.ActorFrame {
@@ -103,7 +90,7 @@ function NewSideBar(params)
 			Def.Quad {
 				InitCommand=function(self)
 					self:xy(params.itemWidth/2,params.itemHeight/2):zoomto(params.itemWidth,params.itemHeight)
-					if currentSideBarItemTable[params.sidebarnum] == i then
+					if SideBarItemTable[params.sidebarnum] == i then
 						self:diffuse(params.currentButtonColor)
 					elseif params.items[i].clickable==nil or params.items[i].clickable() then
 						self:diffuse(params.buttonColor)
@@ -112,7 +99,7 @@ function NewSideBar(params)
 					end
 				end;
 				OnCommand=function(self)
-					if currentSideBarItemTable[params.sidebarnum] == i then
+					if SideBarItemTable[params.sidebarnum] == i then
 						self:diffuse(params.currentButtonColor)
 					elseif params.items[i].clickable==nil or params.items[i].clickable() then
 						self:diffuse(params.buttonColor)
@@ -127,8 +114,8 @@ function NewSideBar(params)
 					if isOver(self) and (not params.items[i].clickable or params.items[i].clickable()) then
 						if params.items[i].onClick then
 							params.items[i].onClick(params, i)
-							MESSAGEMAN:Broadcast("UpdateSideBar")
 						end
+						SelectSideBarItem(params, i)
 					end
 				end,
 			},
@@ -164,7 +151,7 @@ function NewSideBar(params)
 		},
 		Def.Quad {--bottom
 			InitCommand=function(self)
-				self:xy(params.width/2,params.height+params.borderWidth/2):zoomto(params.width,params.borderWidth)
+				self:xy(params.width/2,params.height-params.borderWidth/2):zoomto(params.width,params.borderWidth)
 				self:diffuse(params.borderColor)
 			end;
 		},
@@ -214,5 +201,5 @@ function NewSideBar(params)
 	end
 	t[#t+1] = rightArrow
 	t[#t+1] = leftArrow
-	return t
+	return ret
 end

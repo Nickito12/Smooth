@@ -1,16 +1,10 @@
-function EnsureProfileIsSelected()
-	if not ProfileSelected() then
-		return false
-	end
-	return true
-end
-function ChangeScreenFunction(screen)
-	return function() ChangeScreen(screen) end
+function IsProfileSelected()
+	return (PROFILEMAN:GetProfile(PLAYER_1) and PROFILEMAN:GetProfile(PLAYER_1):GetDisplayName()~="")
 end
 local items = {
 	{name="Play", 
 		onClick=ChangeScreenFunction("ScreenSelectMusic"),
-		condition=EnsureProfileIsSelected
+		condition=IsProfileSelected
 	},
 	{name="Profile", 
 		onClick=ChangeScreenFunction("ScreenSelectProfile")

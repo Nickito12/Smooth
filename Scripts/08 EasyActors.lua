@@ -7,53 +7,107 @@ function fillNilTableFieldsFrom(table1, defaultTable)
 	end
 end
 
-Def.Label = function(x, y, scale, text, color)
+local defaultLabel = {
+	x=0,
+	y=0,
+	scale=1.0,
+	text="",
+	width=nil,
+	color=color("#FFFFFF"),
+	init=nil
+}
+Def.Label = function(params)
+	fillNilTableFieldsFrom(params, defaultLabel)
 	return LoadFont("Common Normal") .. {
 		InitCommand=function(self)
-			self:xy(x or 0, y or 0):zoom(scale or 0.75)
+			self:xy(params.x, params.y):zoom(params.scale)
 			if width then
-				self:maxwidth(width)
+				self:maxwidth(params.width)
 			end
+			if params.init then params.init(self) end
 		end,
 		BeginCommand=function(self)
-			self:settext(text):diffuse(color or color("#FFFFFF"))
+			self:settext(params.text):diffuse(params.color)
 		end
 	}
 end
-local defaultButton = {
+
+local defaultRectangle = {
 	x=0,
 	y=0,
-	bgcolor=color("#FFFFFF"),
-	fontColor=color("#000000"),
-	fontScale=0.5,
-	text="",
-	onClick=nil
+	width=100,
+	height=100,
+	color=color("#FFFFFF"),
+	onClick=nil,
+	init=nil
 }
+Def.Rectangle = function(params)
+	fillNilTableFieldsFrom(params, defaultRectangle)
+	return Def.Quad {
+			InitCommand=function(self)
+				self:xy(params.x + params.width/2,params.y + params.height/2):zoomto(params.width,params.height)
+				if params.init then params.init(self) end
+			end;
+			OnCommand=function(self)
+				self:diffuse(params.color)
+			end;
+			LeftClickMessageCommand=function(self)
+				if params.onClick and isOver(self) then
+					params.onClick()
+				end
+			end,
+		}
+end
 
-Def.Button = function(params)
+
+local defaultBorders = {
+	x=0,
+	y=0,
+	color=color("#FFFFFF"),
+	width=100,
+	height=100,
+	borderWidth=10,
+	init=nil,
+}
+Def.Borders = function(params)
+	fillNilTableFieldsFrom(params, defaultBorders)
 	return Def.ActorFrame {
 		InitCommand=function(self)
 			self:xy(params.x,params.y)
-		end;
-		Def.Quad {
-			InitCommand=function(self)
-				self:xy(params.width/2,params.height/2):zoomto(params.width,params.height)
-			end;
-			OnCommand=function(self)
-				self:diffuse(params.bgColor)
-			end;
-			LeftClickMessageCommand=function(self)
-				if params.OnClick and isOver(self) then
-					params.OnClick()
-				end
-			end,
-		},
-		LoadFont("Common Large")..{
-			InitCommand=function(self)
-				self:xy(params.width/2,params.height/2):zoom(params.fontScale):maxwidth(params.width*0.9):diffuse(params.fontColor):halign(0.5)
-				self:settext(params.text)
-			end,
-		},
+			if params.init then params.init(self) end
+		end,
+		--4 border quads
+		Def.Rectangle({width=params.borderWidth, height=params.height, color=params.color}), --left
+		Def.Rectangle({width=params.width, height=params.borderWidth, color=params.color}), --top
+		Def.Rectangle({x=params.width-params.borderWidth, width=params.borderWidth, height=params.height, color=params.color}), --right
+		Def.Rectangle({y=params.height-params.borderWidth, width=params.width, height=params.borderWidth, color=params.color}), --bottom
+	}
+end
+
+local defaultButton = {
+	x=0,
+	y=0,
+	width=100,
+	height=100,
+	bgColor=color("#FFFFFF"),
+	fontScale=0.5,
+	fontColor=color("#000000"),
+	borderWidth=nil,
+	borderColor=color("#888888"),
+	text="",
+	onClick=nil,
+	init=nil
+}
+Def.Button = function(params)
+	fillNilTableFieldsFrom(params, defaultButton)
+	return Def.ActorFrame {
+		InitCommand=function(self)
+			self:xy(params.x,params.y)
+			if params.init then params.init(self) end
+		end,
+		Def.Rectangle({width=params.width, height=params.height, color=params.bgColor, onClick=params.OnClick}),
+		Def.Label(params.width/2,params.height/2, params.fontScale, params.text, params.fontColor, params.width*0.9, function(s) s:halign(0.5) end),
+		(params.borderWidth and params.borderWidth > 0 and Def.Borders({borderWidth=borderWidth, color=borderColor, width=width, height=height}) or nil),
 	}
 end
 
@@ -114,17 +168,6 @@ local function gen_arrow_verts(size, point_vert, leg_width, leg_len, stem_width)
 		{point_vert[1]+leg_len, point_vert[2]+leg_len+leg_width, 0},
 		{point_vert[1]+leg_len-leg_width, point_vert[2]+leg_len+leg_width, 0},
 
-		{point_vert[1]-stem_width, point_vert[2]+stem_width, 0},
-		{point_vert[1]+stem_width, point_vert[2]+stem_width, 0},
-		{point_vert[1]-stem_width, point_vert[2]+size-stem_width, 0},
-
-		{point_vert[1]+stem_width, point_vert[2]+stem_width, 0},
-		{point_vert[1]+stem_width, point_vert[2]+size-stem_width, 0},
-		{point_vert[1]-stem_width, point_vert[2]+size-stem_width, 0},
-
-		{point_vert[1]-stem_width, point_vert[2]+size-stem_width, 0},
-		{point_vert[1]+stem_width, point_vert[2]+size-stem_width, 0},
-		{point_vert[1], point_vert[2]+size, 0},
 	}
 end
 

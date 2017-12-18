@@ -32,7 +32,85 @@ function GetLocalProfiles()
 
 	return t
 end
+local SelectOpts = {
+	x = SCREEN_CENTER_X,
+	y = SCREEN_CENTER_Y,
+	buttonWidth = 162,
+	buttonHeight = 58,
+	buttonColor = color("#000000"),
+}
+function GetLocalProfileButtons()
+	local profileQty = PROFILEMAN:GetNumLocalProfiles()
+	local t = Def.ActorFrame {
+		InitCommand=function(self)
+			self:xy(SelectOpts.x,SelectOpts.y-math.floor(profileQty/2)*SelectOpts.buttonHeight)
+		end,
+	}
+	for p = 0,profileQty-1 do
+		local profileID = PROFILEMAN:GetLocalProfileIDFromIndex(p)
+		local profile=PROFILEMAN:GetLocalProfileFromIndex(p)
+		t[#t+1] = Def.ActorFrame {
+			InitCommand=function(self)
+				self:y(SelectOpts.buttonHeight/2+SelectOpts.buttonHeight*p)
+			end,
+			Def.Quad {
+				InitCommand=function(self)
+					self:zoomto(SelectOpts.buttonWidth,SelectOpts.buttonHeight):diffuse(SelectOpts.buttonColor)
+				end,
+				LeftClickMessageCommand=function(self)
+					if isOver(self) then
+						SCREENMAN:GetTopScreen():SetProfileIndex(PLAYER_1, -1)
+						SCREENMAN:GetTopScreen():SetProfileIndex(PLAYER_1, p+1)
+						SCREENMAN:GetTopScreen():Finish();
+					end
+				end,
+			},
+			LoadFont("Common Large") .. {
+				Text=string.format("%s: %.2f",profile:GetDisplayName(), profile:GetPlayerRating()),
+				InitCommand=function(self)
+					self:xy(SelectOpts.buttonWidth*0.1,-10):zoom(0.4):ztest(true):maxwidth((SelectOpts.buttonWidth*0.8)/0.4)
+				end	
+			},
 
+			LoadFont("Common Normal") .. {
+				InitCommand=function(self)
+					self:xy(SelectOpts.buttonWidth*0.1,8):zoom(0.5):vertspacing(-8):ztest(true):maxwidth((SelectOpts.buttonWidth*0.8)/0.5)
+				end,
+				BeginCommand=function(self)
+					local numSongsPlayed = profile:GetNumTotalSongsPlayed()
+					local s = numSongsPlayed == 1 and "Song" or "Songs"
+					-- todo: localize
+					self:settext( numSongsPlayed.." "..s.." Played" )
+				end
+			},
+		}	
+	end
+	local p = profileQty
+	t[#t+1] = Def.ActorFrame {
+		InitCommand=function(self)
+			self:y(SelectOpts.buttonHeight/2+SelectOpts.buttonHeight*p)
+		end,
+		Def.Quad {
+			InitCommand=function(self)
+				self:zoomto(SelectOpts.buttonWidth,SelectOpts.buttonHeight):diffuse(SelectOpts.buttonColor)
+			end,
+			LeftClickMessageCommand=function(self)
+				if isOver(self) then
+					--todo ?? make new profile
+					PROFILEMAN:CreateLocalProfile("test2")
+				end
+			end,
+		},
+		LoadFont("Common Large") .. {
+			Text="New Profile",
+			InitCommand=function(self)
+				self:xy(SelectOpts.buttonWidth*0.1,-10):zoom(0.4):ztest(true):maxwidth((SelectOpts.buttonWidth*0.8)/0.4)
+			end	
+		},
+	}	
+
+	return t
+end
 function LoadCard(cColor)
 	local t = Def.ActorFrame {
 		Def.Quad {
@@ -171,7 +249,9 @@ end;
 
 local t = Def.ActorFrame {}
 
-t[#t+1] = Def.ActorFrame{
+local Selectt = Def.ActorFrame{
+}
+local Select = Def.ActorFrame{
 	StorageDevicesChangedMessageCommand=function(self, params)
 		self:queuecommand('UpdateInternal2');
 	end;
@@ -183,6 +263,7 @@ t[#t+1] = Def.ActorFrame{
 				SCREENMAN:GetTopScreen():SetProfileIndex(params.PlayerNumber, -1);
 			else
 				SCREENMAN:GetTopScreen():Finish();
+				ChangeScreen("ScreenSelectProfile")
 			end;
 		end;
 		if params.Name == 'Up' or params.Name == 'Up2' or params.Name == 'DownLeft' then
@@ -271,9 +352,8 @@ t[#t+1] = Def.ActorFrame{
 	};
 };
 
-t[#t+1] = LoadActor("_mainmenu")
 
-
+local a =false
 local sideBarOpts = {
 	items = {
 		{
@@ -282,8 +362,9 @@ local sideBarOpts = {
 				return true
 			end,
 			onClick = function(params, i)
-				SelectSideBarItem(params, i)
+				
 			end,
+			content = GetLocalProfileButtons(),
 		},
 		{
 			name = "Stats",
@@ -291,11 +372,12 @@ local sideBarOpts = {
 				return true
 			end,
 			onClick = function(params, i)
-				SelectSideBarItem(params, i)
+				
 			end,
 		},
-	}
+	},
 }
 t[#t+1] = NewSideBar(sideBarOpts)
+t[#t+1] = LoadActor("_mainmenu")
 
 return t;
