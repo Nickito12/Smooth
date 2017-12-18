@@ -35,8 +35,10 @@ ChangeScreen("ScreenSelectProfile")
 ```
 But the reality is that, even if the code is ran when TitleMenu starts, usually the most we can do directly in the file is just change the values of global variables. In this case our little function will do "SCREENMAN:GetTopScreen" and encounter some kind of error. But dont despair! The way theming works each BGA (BGAnimations) file returns an Actor, which will later be loaded in the screen. But, what is an Actor you ask? If you're familiar with Object Oriented Programming (OOP) you can think of an Actor as an object (It's actually a lua table with some special things). What matters is that there are different kinds of Actors (We will learn about them bit by bit with examples), and each has its own functionality.
 The basic Actor is the container Actor, called ActorFrame. Almosts all it does is "own" other Actors. Usually all BGA files return an ActorFrame. Here is how we define an actor frame and return it (This would be "ScreenTitleMenu overlay.lua")
-```local t = Def.ActorFrame{}
-return t```
+```
+local t = Def.ActorFrame{}
+return t
+```
 But this wont do anything! How do we make the ActorFrame *do* stuff? For theming (And all smlua) theres things called Commands. They're like functions each actor may or may not have, that if found will be called on certain events (This kind of function is often called a *hook*, because its a function that is hooked to a certain event). The most basic but still incredibly useful is the InitCommand. All Actors have this command, and I will mention now that not all Actors have the same commands. So, now we're going to make the ActorFrame change the screen as soon as the TitleMenu screen is loaded.
 ```
 local t = Def.ActorFrame{
