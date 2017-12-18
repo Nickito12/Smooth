@@ -52,7 +52,7 @@ Good, we've finally gotten rid of TitleMenu forever. But this solution is kinda 
 In themes, theres a file called metrics.ini . This file has "sections" and "variables". All metrics variables are inside a section. There "variables" usually have a string or number, but they can also contain functions. You could think of metrics as the "preferences" of your theme. The Etterna Core (Which is in the C++ programming language) reads the metrics file and uses the values in it in a lot of different places. Usually its used for things like managing objects that C++ takes care of (Most/All of these can be replaced with lua equivalents. A good example is the Music Wheel. We'll look at this later), adjusting their position and various options/properties. It also takes care of what i call "Screen Branching". By that i mean the screen/s that each screen goes to. The following is what we're gonna write in our metrics file to change the first screen:
 ```
 [Common]
-\# First screen that pops up when you start the game
+# First screen that pops up when you start the game
 InitialScreen="ScreenSelectProfile"
 ```
 It's pretty straight forward. To see what metrics exist you can usually look at fallback's metrics. Theres also special global table called Branches thats related to "Screen Branching". This defines under which conditions each screen goes to another screen when they're left. But, didnt metrics do this you ask? Yes, it did. In fact, all thats happening is that fallback's metrics calls global functions from the Branches table to define some of its "variables". This is a way to avoid metrics and let themers simply define their "Screen Branching" in a /Scripts/ file that overwrites some of the values in said table (Branches) (Sadly theres no branch as of this writing for InitialScreen).
@@ -66,7 +66,8 @@ t[#t+1] = LoadActor("_mainmenu")
 return t
 ```
 LoadActor loads an actor from a lua file (There are other ways to use other files, but we're not gonna go into them). If you ever want to load an actor in a folder that outside the current one, you can use ".." (Ex: "../\_mainmenu"). Now we'll make our main menu. It will be, in essence, a series of clickable buttons which will each have a text, something they will do when clicked (Probably just change the screen) and a condition to be clickable (Like, having a profile selected to go to SelectMusic) that will span the entire width of the screen and, ideally, be retractable. Lets start making our "items":
-```function ChangeScreenFunction(screen)
+```
+function ChangeScreenFunction(screen)
 	return function() ChangeScreen(screen) end
 end
 function IsProfileSelected()
